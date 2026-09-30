@@ -1,0 +1,1 @@
+{"version":3,"file":"settingsInput.d.ts","sourceRoot":"","sources":["../../../src/generated/types/settingsInput.ts"],"names":[],"mappings":"AAAA;;;;;;GAMG;AACH,OAAO,KAAK,EAAE,mBAAmB,EAAE,MAAM,uBAAuB,CAAC;AAEjE,MAAM,WAAW,aAAa;IAC5B,MAAM,CAAC,EAAE,mBAAmB,CAAC;IAC7B,cAAc,CAAC,EAAE,MAAM,EAAE,CAAC;IAC1B,SAAS,CAAC,EAAE,MAAM,CAAC;IACnB,aAAa,CAAC,EAAE,MAAM,CAAC;CACxB"}
