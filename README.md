@@ -15,7 +15,7 @@ DataScout AI converts plain-English business research requests into clean, sourc
 
 ## Demo Video
 
-<img width="400" height="223" alt="Screen Recording 2026-09-30 at 3 55 49 PM" src="https://github.com/user-attachments/assets/4cb683b0-af3a-494c-85e0-dbbff62c7051" />
+
 
 
 ## Local setup
