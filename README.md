@@ -13,6 +13,9 @@ DataScout AI converts plain-English business research requests into clean, sourc
 - Generated OpenAPI client and Zod validation schemas
 - Free-tier-friendly mock mode with no paid API keys required
 
+## Demo Video
+<!-- Failed to upload "Screen Recording 2026-09-30 at 3.55.49 PM.mov" -->
+
 ## Local setup
 
 Requirements: Node.js 20+ and pnpm 9+.
