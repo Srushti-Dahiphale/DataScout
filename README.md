@@ -14,7 +14,8 @@ DataScout AI converts plain-English business research requests into clean, sourc
 - Free-tier-friendly mock mode with no paid API keys required
 
 ## Demo Video
-<!-- Failed to upload "Screen Recording 2026-09-30 at 3.55.49 PM.mov" -->
+
+<img width="400" height="223" alt="MVP demo" src="https://github.com/user-attachments/assets/03c5a0a4-0771-4ec6-b9cc-0f05d2c12cb3" />
 
 ## Local setup
 
