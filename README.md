@@ -1,3 +1,5 @@
+
+
 # DataScout AI
 
 DataScout AI converts plain-English business research requests into clean, source-backed datasets. It shows the parsed intent, proposes a collection workflow, runs the workflow asynchronously, and lets users inspect records with provenance and confidence.
@@ -14,9 +16,7 @@ DataScout AI converts plain-English business research requests into clean, sourc
 - Free-tier-friendly mock mode with no paid API keys required
 
 ## Demo Video
-
-
-
+https://drive.google.com/file/d/1n6a_oZ2DNX0Hp4umokoCMbmx9I3Ar4Km/view?usp=sharing
 
 ## Local setup
 
