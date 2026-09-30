@@ -1,0 +1,444 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: DataScout AI API
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+  - name: dashboard
+  - name: prompts
+  - name: workflows
+  - name: datasets
+  - name: history
+  - name: settings
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+  /dashboard/summary:
+    get:
+      operationId: getDashboardSummary
+      tags: [dashboard]
+      summary: Get dashboard summary
+      responses:
+        "200":
+          description: Dashboard metrics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummary"
+  /prompts/analyze:
+    post:
+      operationId: analyzePrompt
+      tags: [prompts]
+      summary: Parse a natural-language collection request
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PromptInput"
+      responses:
+        "200":
+          description: Parsed request and proposed workflow
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PromptAnalysis"
+        "400":
+          description: Invalid prompt
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /workflows:
+    get:
+      operationId: listWorkflows
+      tags: [workflows]
+      summary: List recent workflows
+      responses:
+        "200":
+          description: Recent workflows
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Workflow"
+    post:
+      operationId: createWorkflow
+      tags: [workflows]
+      summary: Create a workflow from a prompt
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WorkflowInput"
+      responses:
+        "201":
+          description: Workflow created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Workflow"
+  /workflows/{id}:
+    get:
+      operationId: getWorkflow
+      tags: [workflows]
+      summary: Get a workflow
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "200":
+          description: Workflow
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Workflow"
+        "404":
+          description: Workflow not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /workflows/{id}/run:
+    post:
+      operationId: runWorkflow
+      tags: [workflows]
+      summary: Run a workflow
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "200":
+          description: Started workflow
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Workflow"
+  /workflows/{id}/cancel:
+    post:
+      operationId: cancelWorkflow
+      tags: [workflows]
+      summary: Cancel a workflow
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "200":
+          description: Cancelled workflow
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Workflow"
+  /datasets:
+    get:
+      operationId: listDatasets
+      tags: [datasets]
+      summary: List datasets
+      responses:
+        "200":
+          description: Datasets
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Dataset"
+  /datasets/{id}/records:
+    get:
+      operationId: getDatasetRecords
+      tags: [datasets]
+      summary: Get records in a dataset
+      parameters:
+        - $ref: "#/components/parameters/Id"
+        - in: query
+          name: search
+          schema:
+            type: string
+        - in: query
+          name: source
+          schema:
+            type: string
+        - in: query
+          name: confidence
+          schema:
+            type: string
+            enum: [all, high, medium, low]
+      responses:
+        "200":
+          description: Dataset records
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DataRecord"
+  /datasets/{id}/export:
+    post:
+      operationId: exportDataset
+      tags: [datasets]
+      summary: Export a dataset
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExportInput"
+      responses:
+        "200":
+          description: Export details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Export"
+  /history:
+    get:
+      operationId: getHistory
+      tags: [history]
+      summary: Get audit history
+      responses:
+        "200":
+          description: History events
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/HistoryEvent"
+  /settings:
+    get:
+      operationId: getSettings
+      tags: [settings]
+      summary: Get workspace settings
+      responses:
+        "200":
+          description: Settings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Settings"
+    patch:
+      operationId: updateSettings
+      tags: [settings]
+      summary: Update workspace settings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SettingsInput"
+      responses:
+        "200":
+          description: Updated settings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Settings"
+components:
+  parameters:
+    Id:
+      in: path
+      name: id
+      required: true
+      schema:
+        type: string
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required: [status]
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+      required: [error]
+    PromptInput:
+      type: object
+      properties:
+        prompt:
+          type: string
+          minLength: 5
+      required: [prompt]
+    Field:
+      type: object
+      properties:
+        name: { type: string }
+        type:
+          type: string
+          enum: [text, url, currency, date, email, number]
+        required: { type: boolean }
+      required: [name, type, required]
+    WorkflowStep:
+      type: object
+      properties:
+        id: { type: string }
+        label: { type: string }
+        status:
+          type: string
+          enum: [pending, running, success, failed, skipped, retrying, cancelled]
+        durationMs: { type: integer }
+        detail: { type: string }
+      required: [id, label, status]
+    PromptAnalysis:
+      type: object
+      properties:
+        intent: { type: string }
+        entity: { type: string }
+        geography: { type: string }
+        limit: { type: integer }
+        confidence: { type: number }
+        fields:
+          type: array
+          items: { $ref: "#/components/schemas/Field" }
+        filters:
+          type: array
+          items: { type: string }
+        sources:
+          type: array
+          items: { type: string }
+        steps:
+          type: array
+          items: { $ref: "#/components/schemas/WorkflowStep" }
+      required: [intent, entity, geography, limit, confidence, fields, filters, sources, steps]
+    WorkflowInput:
+      type: object
+      properties:
+        prompt: { type: string, minLength: 5 }
+        analysis: { $ref: "#/components/schemas/PromptAnalysis" }
+      required: [prompt, analysis]
+    Workflow:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        prompt: { type: string }
+        status:
+          type: string
+          enum: [queued, running, completed, failed, cancelled]
+        progress: { type: integer }
+        recordsCollected: { type: integer }
+        createdAt: { type: string }
+        updatedAt: { type: string }
+        steps:
+          type: array
+          items: { $ref: "#/components/schemas/WorkflowStep" }
+      required: [id, name, prompt, status, progress, recordsCollected, createdAt, updatedAt, steps]
+    Dataset:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        records: { type: integer }
+        fields: { type: integer }
+        sourceCount: { type: integer }
+        confidence: { type: number }
+        updatedAt: { type: string }
+        status:
+          type: string
+          enum: [ready, processing, archived]
+      required: [id, name, records, fields, sourceCount, confidence, updatedAt, status]
+    DataRecord:
+      type: object
+      properties:
+        id: { type: string }
+        company: { type: string }
+        founder: { type: string }
+        website: { type: string }
+        funding: { type: string }
+        sourceUrl: { type: string }
+        source: { type: string }
+        retrievedAt: { type: string }
+        confidence: { type: number }
+        validation:
+          type: string
+          enum: [passed, review]
+      required: [id, company, founder, website, funding, sourceUrl, source, retrievedAt, confidence, validation]
+    DashboardSummary:
+      type: object
+      properties:
+        totalDatasets: { type: integer }
+        activeWorkflows: { type: integer }
+        recordsCollected: { type: integer }
+        successRate: { type: number }
+        recordsByDay:
+          type: array
+          items:
+            type: object
+            properties:
+              day: { type: string }
+              records: { type: integer }
+            required: [day, records]
+        sourceDistribution:
+          type: array
+          items:
+            type: object
+            properties:
+              source: { type: string }
+              records: { type: integer }
+            required: [source, records]
+      required: [totalDatasets, activeWorkflows, recordsCollected, successRate, recordsByDay, sourceDistribution]
+    ExportInput:
+      type: object
+      properties:
+        format:
+          type: string
+          enum: [csv, json, xlsx]
+      required: [format]
+    Export:
+      type: object
+      properties:
+        id: { type: string }
+        format: { type: string }
+        downloadUrl: { type: string }
+        createdAt: { type: string }
+      required: [id, format, downloadUrl, createdAt]
+    HistoryEvent:
+      type: object
+      properties:
+        id: { type: string }
+        action: { type: string }
+        detail: { type: string }
+        createdAt: { type: string }
+      required: [id, action, detail, createdAt]
+    Settings:
+      type: object
+      properties:
+        aiMode:
+          type: string
+          enum: [mock, ollama, huggingface]
+        allowedDomains:
+          type: array
+          items: { type: string }
+        rateLimit: { type: integer }
+        defaultSource:
+          type: string
+      required: [aiMode, allowedDomains, rateLimit, defaultSource]
+    SettingsInput:
+      type: object
+      properties:
+        aiMode:
+          type: string
+          enum: [mock, ollama, huggingface]
+        allowedDomains:
+          type: array
+          items: { type: string }
+        rateLimit: { type: integer }
+        defaultSource: { type: string }
