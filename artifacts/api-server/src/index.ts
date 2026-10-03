@@ -1,6 +1,8 @@
 // artifacts/api-server/src/index.ts
+import "./load-env";
 import app from "./app";
-import { logger } from "../lib/logger";
+import { logger } from "./lib/logger";
+
 
 const rawPort = process.env["PORT"] || "3000";
 const port = Number(rawPort);
