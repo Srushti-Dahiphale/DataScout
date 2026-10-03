@@ -23,10 +23,12 @@ import {
   RunWorkflowResponse,
   UpdateSettingsBody,
   UpdateSettingsResponse,
+  type Workflow,
 } from "@workspace/api-zod";
 import {
   datasets,
   getDataset,
+  getDatasetRecords,
   getWorkflow,
   history,
   makeSteps,
@@ -34,8 +36,10 @@ import {
   settings,
   startWorkflow,
   workflows,
-  type Workflow,
 } from "../lib/datascout-store";
+import { traceRun } from "../lib/langsmith";
+import { uploadExportFile } from "../lib/cloudinary";
+import { analyzeWithLLM } from "../lib/mistral";
 
 const router: IRouter = Router();
 
@@ -102,13 +106,30 @@ router.get("/dashboard/summary", (_req, res) => {
   res.json(GetDashboardSummaryResponse.parse(data));
 });
 
-router.post("/prompts/analyze", (req, res) => {
+router.post("/prompts/analyze", async (req, res) => {
   const parsed = AnalyzePromptBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
     return;
   }
-  res.json(AnalyzePromptResponse.parse(createAnalysis(parsed.data.prompt)));
+  const analysis = await traceRun("prompt-analysis", { prompt: parsed.data.prompt }, async () => {
+    const llm = await analyzeWithLLM(parsed.data.prompt);
+    const base = createAnalysis(parsed.data.prompt);
+    if (!llm) return base;
+    const merged = {
+      ...base,
+      ...(llm as object),
+      fields: base.fields,
+      steps: base.steps,
+    };
+    merged.geography = merged.geography || "Global";
+    if (!merged.limit || merged.limit > 1000 || merged.limit < 1) merged.limit = base.limit;
+    if (!Array.isArray(merged.filters) || merged.filters.length === 0) merged.filters = base.filters;
+    if (!Array.isArray(merged.sources) || merged.sources.length === 0) merged.sources = base.sources;
+    if (typeof merged.confidence !== "number" || merged.confidence <= 0 || merged.confidence > 1) merged.confidence = base.confidence;
+    return merged;
+  });
+  res.json(AnalyzePromptResponse.parse(analysis));
 });
 
 router.get("/workflows", (_req, res) => {
@@ -151,7 +172,7 @@ router.get("/workflows/:id", (req, res) => {
   res.json(GetWorkflowResponse.parse(workflow));
 });
 
-router.post("/workflows/:id/run", (req, res) => {
+router.post("/workflows/:id/run", async (req, res) => {
   const params = RunWorkflowParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
@@ -162,7 +183,9 @@ router.post("/workflows/:id/run", (req, res) => {
     res.status(404).json({ error: "Workflow not found" });
     return;
   }
-  startWorkflow(workflow);
+  await traceRun("workflow-run", { id: workflow.id, prompt: workflow.prompt }, () =>
+    startWorkflow(workflow),
+  );
   res.json(RunWorkflowResponse.parse(workflow));
 });
 
@@ -202,7 +225,7 @@ router.get("/datasets/:id/records", (req, res) => {
     res.status(404).json({ error: "Dataset not found" });
     return;
   }
-  const filtered = records.filter((record) => {
+  const filtered = getDatasetRecords(params.data.id).filter((record) => {
     const search = query.data.search?.toLowerCase();
     const matchesSearch =
       !search ||
@@ -224,7 +247,7 @@ router.get("/datasets/:id/records", (req, res) => {
   res.json(GetDatasetRecordsResponse.parse(filtered));
 });
 
-router.post("/datasets/:id/export", (req, res) => {
+router.post("/datasets/:id/export", async (req, res) => {
   const params = ExportDatasetParams.safeParse(req.params);
   const body = ExportDatasetBody.safeParse(req.body);
   if (!params.success || !body.success) {
@@ -235,11 +258,27 @@ router.post("/datasets/:id/export", (req, res) => {
     res.status(404).json({ error: "Dataset not found" });
     return;
   }
+  let downloadUrl = `/api/datasets/${params.data.id}/export/download?format=${body.data.format}`;
+  try {
+    const rows = records.map((r) =>
+      body.data.format === "json"
+        ? JSON.stringify(r)
+        : [r.company, r.founder, r.website, r.funding, r.source, r.sourceUrl, r.confidence].join(","),
+    );
+    const content =
+      body.data.format === "json" ? `[\n${rows.join(",\n")}\n]` : rows.join("\n");
+    downloadUrl = await uploadExportFile(
+      `dataset-${params.data.id}.${body.data.format === "xlsx" ? "csv" : body.data.format}`,
+      content,
+    );
+  } catch {
+    // Cloudinary not configured — keep local download URL
+  }
   res.json(
     ExportDatasetResponse.parse({
       id: `exp_${Date.now()}`,
       format: body.data.format,
-      downloadUrl: `/api/datasets/${params.data.id}/export/download?format=${body.data.format}`,
+      downloadUrl,
       createdAt: new Date().toISOString(),
     }),
   );

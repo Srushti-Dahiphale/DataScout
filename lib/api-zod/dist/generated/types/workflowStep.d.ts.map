@@ -1,1 +1,0 @@
-{"version":3,"file":"workflowStep.d.ts","sourceRoot":"","sources":["../../../src/generated/types/workflowStep.ts"],"names":[],"mappings":"AAAA;;;;;;GAMG;AACH,OAAO,KAAK,EAAE,kBAAkB,EAAE,MAAM,sBAAsB,CAAC;AAE/D,MAAM,WAAW,YAAY;IAC3B,EAAE,EAAE,MAAM,CAAC;IACX,KAAK,EAAE,MAAM,CAAC;IACd,MAAM,EAAE,kBAAkB,CAAC;IAC3B,UAAU,CAAC,EAAE,MAAM,CAAC;IACpB,MAAM,CAAC,EAAE,MAAM,CAAC;CACjB"}
